@@ -9,9 +9,8 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.support.ui.Select;
 
 import java.io.*;
-import java.sql.SQLOutput;
+import java.nio.channels.ScatteringByteChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,20 +21,18 @@ public class SeleniumScheduledTask {
     static WebDriver driver;
     public static void main(String[] args) {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
         // Metodo ppal que llama a:  runSeleniumCode() para que se ejecute cada 5 minutos
         scheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-
                 System.out.println("Ejecutando el código de Selenium cada 5 minutos...");
                 runSeleniumCode();
             }
-        }, 0, 5, TimeUnit.MINUTES);
+        }, 0, 1, TimeUnit.MINUTES);
     }
 
     public static void runSeleniumCode() {
-        int maxRetries = 2; // Número máximo de intentos
+        int maxRetries = 1; // Número máximo de intentos
         int retryCount;     // Contador de intentos en el ciclo
         int IDcliente =0;
         String rutaArchivoClientes = "/Users/badir.realpe/Documents/Clientes.txt";
@@ -75,53 +72,57 @@ public class SeleniumScheduledTask {
                         // PAGINA PRINCIPAL
                         username.sendKeys(datosCliente[0]);
                         pass.sendKeys(datosCliente[1]);
-
-                        actualizarRegistro(listaClientes, IDcliente, rutaArchivoClientes);
-
                         politicaPrivacidad.click();
                         botonIniciarSesion.click();
-                        sleep(4000);
+                        sleepSeconds(5000);
 
-                        //Tomas las fechas que por ahora no se necesita...
-                        //WebElement citaActual = driver.findElement(By.xpath("//div[@class='application attend_appointment card success']//p[@class='consular-appt']"));
-                        //String datoCitaActual = citaActual.getText();
-                        //datoCitaActual = datoCitaActual.replace(",", "");
-                        //String partes[] = datoCitaActual.split(" ");
-                        String partes[] = new String[5];
-
+                        /*String partes[] = new String[5];
                         partes[3] = "December";
-                        partes[4] = "2028";
+                        partes[4] = "2028";*/
 
-                   /* System.out.println("1...:" + partes[2]);
-                    System.out.println("2...:" + partes[3]);
-                    System.out.println("3...:" + partes[4]);*/
+
+                        //Tomas las fechas actuales de la cita
+                        WebElement citaActual = driver.findElement(By.xpath("//div[@class='application attend_appointment card success']//p[@class='consular-appt']"));
+                        String datoCitaActual = citaActual.getText();
+                        datoCitaActual = datoCitaActual.replace(",", "");
+                        String partes[] = datoCitaActual.split(" ");
+
+
+                        System.out.println("1...:" + partes[2]); // Dia de la cita actual
+                        System.out.println("2...:" + partes[3]); // Mes de la cita actual
+                        System.out.println("3...:" + partes[4]); // Año de la cita actual
                         //sleep(2000);
 
                         WebElement botonContinuar = driver.findElement(By.xpath("//li[a[text()='Continuar']]"));
                         botonContinuar.click();
-                        sleep(2000);
+                        sleepSeconds(2000);
 
-                        WebElement menuProgramarCita = driver.findElement(By.xpath("//*[@id='forms']/ul/li[1]"));
+                        //menu programar cita primera vez
+                        /*WebElement menuProgramarCita = driver.findElement(By.xpath("//*[@id='forms']/ul/li[1]"));
                         menuProgramarCita.click();
-                        sleep(2000);
+                        sleep(2000);*/
 
-                /*  WebElement repro = driver.findElement(By.xpath("//*[@id='forms']/ul/li[4]"));
-                    repro.click();
-                    sleep(2000); */
-
-                        WebElement botonProgramarCita = driver.findElement(By.cssSelector("a.button.small.primary.small-only-expanded"));
+                        //boton de programar cita de primera vez.
+                        /*WebElement botonProgramarCita = driver.findElement(By.cssSelector("a.button.small.primary.small-only-expanded"));
                         botonProgramarCita.click();
-                        sleep(2000);
-                    /*    WebElement reprocita = driver.findElement(By.xpath("             /html/body/div[4]/main/div[2]/div[2]/div/section/ul/li[4]/div/div/div[2]/p[2]/a"));
-                    reprocita.click();*/
-                        //sleep(4000);
+                        sleep(2000);*/
+
+                        WebElement menuReprogramarCita = driver.findElement(By.xpath("//*[@id='forms']/ul/li[4]"));
+                        menuReprogramarCita.click();
+                        sleepSeconds(2000);
+
+                        WebElement botonReprogramarCita = driver.findElement(By.xpath("/html/body/div[4]/main/div[2]/div[2]/div/section/ul/li[4]/div/div/div[2]/p[2]/a"));
+                        botonReprogramarCita.click();
+                        sleepSeconds(2000);
 
                         //driver.navigate().refresh();
                         //Campo para abrir el calendario
+
                         // WARNING!!!!!  Es posible que el objeto fechaCitaEmbajada no exista.
                         WebElement fechaCitaEmbajada = driver.findElement(By.xpath("//*[@id='appointments_consulate_appointment_date']"));
                         scrollIntoView(fechaCitaEmbajada);
                         fechaCitaEmbajada.click();
+                        sleepSeconds(1000);
 
                         String textoAnioCitaActualCalEmbajada;// Toma el año del primer mes del calendario de citas
                         WebElement anioCitaActualCalendarioEmbajada = driver.findElement(By.xpath("//span[@class='ui-datepicker-year']"));
@@ -131,134 +132,155 @@ public class SeleniumScheduledTask {
                         WebElement mesCitaActualCalendario = driver.findElement(By.xpath("//span[@class='ui-datepicker-month']"));
                         textoMesCitaActualCal = mesCitaActualCalendario.getText();
 
+                        WebElement iconoFlechaNextCalendarEmbajada = driver.findElement(By.xpath("/html/body/div[5]/div[2]/div/a"));
+                        iconoFlechaNextCalendarEmbajada.click();
+
                         WebElement diaDisponibleCitaEmbajada;
 
                         try {
-                            diaDisponibleCitaEmbajada = driver.findElement(By.xpath("//div[@id='ui-datepicker-div']//td[@data-handler='selectDay']"));
+                            diaDisponibleCitaEmbajada = driver.findElement(By.xpath("//div[@class='ui-datepicker-group ui-datepicker-group-first']//td[@data-handler='selectDay']"));
                         } catch (WebDriverException e) {
                             diaDisponibleCitaEmbajada = null;
                         }
 
-                        WebElement iconoFlechaNextCalendarEmbajada = driver.findElement(By.xpath("/html/body/div[5]/div[2]/div/a"));
-
-
+                        String mesEnIngles = convertirMes(partes[3]);
                         //(No hay dia disponible en el calendario (diaDisponible==null) && el año de la cita actual (partes[4]) se MAYOR que el año que muesta el calendario (anioCitaActualCal)
                         // ó el año de la cita actual (partes[4]) se IGUAL que el año que muesta el calendario (anioCitaActualCal) && el mes de la cita actual (partes[3]) NO SEA el mes que muestra el calendario (mesCitaActualCal)
                         while (diaDisponibleCitaEmbajada == null && ((Integer.parseInt(partes[4]) > Integer.parseInt(textoAnioCitaActualCalEmbajada)) ||
-                                ((Integer.parseInt(partes[4]) == Integer.parseInt(textoAnioCitaActualCalEmbajada)) && !partes[3].equals(textoMesCitaActualCal)))) {
+                                ((Integer.parseInt(partes[4]) == Integer.parseInt(textoAnioCitaActualCalEmbajada)) && !mesEnIngles.equals(textoMesCitaActualCal)))) {
 
-                        /*(Integer.parseInt(partes[4]) >= Integer.parseInt(anioCitaActualCal)&&
+                            /*(Integer.parseInt(partes[4]) >= Integer.parseInt(anioCitaActualCal)&&
                             !partes[3].equals(mesCitaActualCal)&&
                             diaDisponible==null) */
 
-                        /*System.out.println("fecha actual: "+Integer.parseInt(partes[4])+" fecha cal: "+Integer.parseInt(anioCitaActualCalendarioEmbajada.getText()));
-                        System.out.println("mes actual : "+partes[3]+ "mes cal: "+mesCitaActualCal);*/
-
+                            /*System.out.println("fecha actual: "+Integer.parseInt(partes[4])+" fecha cal: "+Integer.parseInt(anioCitaActualCalendarioEmbajada.getText()));
+                            System.out.println("mes actual : "+partes[3]+ "mes cal: "+mesCitaActualCal);*/
+                            iconoFlechaNextCalendarEmbajada = driver.findElement(By.xpath("/html/body/div[5]/div[2]/div/a"));
                             iconoFlechaNextCalendarEmbajada.click();
                             iconoFlechaNextCalendarEmbajada = null;
                             anioCitaActualCalendarioEmbajada = null;
-                            sleep(70);
+                            sleepSeconds(70);
 
                             iconoFlechaNextCalendarEmbajada = driver.findElement(By.xpath("/html/body/div[5]/div[2]/div/a"));
+
                             anioCitaActualCalendarioEmbajada = driver.findElement(By.xpath("//span[@class='ui-datepicker-year']"));
                             textoAnioCitaActualCalEmbajada = anioCitaActualCalendarioEmbajada.getText();
+
                             mesCitaActualCalendario = driver.findElement(By.xpath("//span[@class='ui-datepicker-month']"));
                             textoMesCitaActualCal = mesCitaActualCalendario.getText();
 
                             System.out.println("El valor del año despues del null es: " + anioCitaActualCalendarioEmbajada.getText());
 
                             try {
-                                diaDisponibleCitaEmbajada = driver.findElement(By.xpath("//div[@id='ui-datepicker-div']//td[@data-handler='selectDay']"));
+                                diaDisponibleCitaEmbajada = driver.findElement(By.xpath("//div[@class='ui-datepicker-group ui-datepicker-group-first']//td[@data-handler='selectDay']"));
                                 diaDisponibleCitaEmbajada.click();
-                                sleep(500);
+                                sleepSeconds(500);
 
                                 WebElement listaHorasCitaEntrevista = driver.findElement(By.id("appointments_consulate_appointment_time"));
                                 listaHorasCitaEntrevista.click();
 
                                 WebElement horaCitaEntrevista = driver.findElement(By.xpath("//*[@id='appointments_consulate_appointment_time']/option[2]"));
                                 horaCitaEntrevista.click();
-                                sleep(1000);
+                                sleepSeconds(1000);
 
 
                                 // Crear un objeto Select a partir del elemento listaHorasCitaEntrevista para seleccionar una opcion.
                                 Select select = new Select(listaHorasCitaEntrevista);
                                 // Seleccionar la primera opción por índice
                                 select.selectByIndex(1);
-                                sleep(2000);
+                                sleepSeconds(2000);
 
 
+                                // CALENDARIO DE FECHA DE HUELLAS
                                 WebElement fechaCitaHuellas = driver.findElement(By.xpath("//*[@id='appointments_asc_appointment_date']"));
                                 fechaCitaHuellas.click();
-                                int contadorMeses = 1;
+                                int contadorDiasDisponiblesCitaHuellas = 31;
 
                                 String textoAnioCitaCalendarioHuella;// Toma el año del primer mes del calendario de citas
                                 WebElement anioCitaCalendarioHuella = driver.findElement(By.xpath("//span[@class='ui-datepicker-year']"));
                                 textoAnioCitaCalendarioHuella = anioCitaCalendarioHuella.getText();
 
+                                //Aqui se deberia incluir el ciclo hacia atras para buscar la fecha de huellas
                                 WebElement diaDisponibleCitaHuellas;
                                 try {
-                                    diaDisponibleCitaHuellas = driver.findElement(By.xpath("//div[@id='ui-datepicker-div']//td[@data-handler='selectDay']"));
-                                    sleep(2000);
+                                    diaDisponibleCitaHuellas = driver.findElement(By.xpath("//div[@class='ui-datepicker-group ui-datepicker-group-first']//td[@data-handler='selectDay']"));
+                                    sleepSeconds(2000);
                                 } catch (WebDriverException e) {
                                     diaDisponibleCitaHuellas = null;
                                 }
 
                                 WebElement iconoFlechaNextCalendarHuellas = driver.findElement(By.xpath("/html/body/div[5]/div[2]/div/a"));
 
-                                while (diaDisponibleCitaHuellas == null && Integer.parseInt(textoAnioCitaActualCalEmbajada) >= Integer.parseInt(textoAnioCitaCalendarioHuella)
-                                        && contadorMeses <= 12) {
+                                while (diaDisponibleCitaHuellas == null && Integer.parseInt(textoAnioCitaActualCalEmbajada) >= Integer.parseInt(textoAnioCitaCalendarioHuella)){
 
-                                    sleep(70);
+                                    sleepSeconds(70);
                                     iconoFlechaNextCalendarHuellas.click();
                                     iconoFlechaNextCalendarHuellas = null;
                                     anioCitaCalendarioHuella = null;
-                                    contadorMeses = +1;
-                                    sleep(70);
+                                    sleepSeconds(70);
 
                                     iconoFlechaNextCalendarHuellas = driver.findElement(By.xpath("/html/body/div[5]/div[2]/div/a"));
                                     anioCitaCalendarioHuella = driver.findElement(By.xpath("//span[@class='ui-datepicker-year']"));
                                     try {
-                                        diaDisponibleCitaHuellas = driver.findElement(By.xpath("//div[@id='ui-datepicker-div']//td[@data-handler='selectDay']"));
-                                        diaDisponibleCitaHuellas.click();
-                                        sleep(2000);
+                                        diaDisponibleCitaHuellas = driver.findElement(By.xpath("//div[@class='ui-datepicker-group ui-datepicker-group-first']//td[@data-handler='selectDay']"));
+
+                                        WebElement ultimoDiaDisponibleCitaHuellas = null;
+                                        while (contadorDiasDisponiblesCitaHuellas > 0) {
+                                            try {
+                                                ultimoDiaDisponibleCitaHuellas = driver.findElement(By.xpath("//div[@class='ui-datepicker-group ui-datepicker-group-first']//td[@data-handler='selectDay']/a[text()='" + contadorDiasDisponiblesCitaHuellas + "']"));
+                                                break;
+                                            } catch (Exception e) {
+                                                contadorDiasDisponiblesCitaHuellas--;
+                                                throw new RuntimeException(e);
+                                            }
+                                        }
+
+                                        ultimoDiaDisponibleCitaHuellas.click();
+                                        //  diaDisponibleCitaHuellas.click();
+                                        sleepSeconds(2000);
 
                                         WebElement listaHorasCitaHuellas = driver.findElement(By.id("appointments_consulate_appointment_time"));
                                         listaHorasCitaHuellas.click();
                                         WebElement horaCitaHuellas = driver.findElement(By.xpath("//*[@id='appointments_asc_appointment_time']/option[2]"));
                                         horaCitaHuellas.click();
-                                        sleep(1000);
+                                        sleepSeconds(1000);
 
                                         // Crear un objeto Select a partir del elemento listaHorasCitaEntrevista para seleccionar una opcion.
                                         Select select1 = new Select(listaHorasCitaHuellas);
                                         // Seleccionar la primera opción por índice
                                         select1.selectByIndex(1);
+                                        sleepMinutes(60);
 
-
-                                        WebElement botonProgrameLaCita = driver.findElement(By.xpath("//*[@id='appointments_submit'"));
-                                        botonProgrameLaCita.click();
+                                        //Boton para programary reprogramar la cita por primera vez.
+                                        WebElement botonProgrameLaCita = driver.findElement(By.xpath("//*[@id='appointments_submit']"));
+                                        //botonProgrameLaCita.click();
 
                                         //Escribe en el archivo el correo del usuario al que le fue reagendada al cita.
-                                        //actualizarArchivo(listaClientes, rutaArchivoClientes);
+                                        actualizarRegistro(listaClientes, IDcliente, rutaArchivoClientes);
 
                                         WebElement cajaTexto = driver.findElement(By.xpath("//*[@id='appointments_asc_appointment_time']/option[2]"));
                                         cajaTexto.click();
-                                        sleep(2000);
+                                        sleepSeconds(2000);
 
                                     } catch (WebDriverException e) {
                                         diaDisponibleCitaHuellas = null;
+                                    } catch (Exception e) {
+                                        throw new RuntimeException(e);
                                     }
                                 }
                             } catch (WebDriverException e) {
                                 diaDisponibleCitaEmbajada = null;
                             }
                         }
-
                         // Si la cita se reagendo el break detiene el numero de intentos para ese cliente.
+                        driver.quit();
+                        sleepSeconds(2000);
                         break;
+
                     } catch (WebDriverException e) {
                         driver.quit();
                         retryCount++;
-                        sleep(1);
+                        sleepSeconds(1);
                     }
                 }
             }
@@ -267,6 +289,49 @@ public class SeleniumScheduledTask {
         }
     }
 
+
+    public static String convertirMes(String mes) {
+        String mesIngles = "";
+        switch (mes) {
+            case "enero":
+                mesIngles = "January";
+                break;
+            case "febrero":
+                mesIngles = "February";
+                break;
+            case "marzo":
+                mesIngles = "March";
+                break;
+            case "abril":
+                mesIngles = "April";
+                break;
+            case "mayo":
+                mesIngles = "May";
+                break;
+            case "junio":
+                mesIngles = "June";
+                break;
+            case "julio":
+                mesIngles = "July";
+                break;
+            case "agosto":
+                mesIngles = "August";
+                break;
+            case "septiembre":
+                mesIngles = "September";
+                break;
+            case "octubre":
+                mesIngles = "October";
+                break;
+            case "noviembre":
+                mesIngles = "November";
+                break;
+            case "diciembre":
+                mesIngles = "December";
+                break;
+        }
+        return mesIngles;
+    }   // Leer el archivo de texto y almacenar los datos en una lista de arreglos de cadenas
     public static List<String[]> leerArchivoTxt(String rutaArchivo) {
         List<String[]> dataList = new ArrayList<>();
         String linea;
@@ -282,7 +347,6 @@ public class SeleniumScheduledTask {
         }
         return dataList;
     }
-
     public static void actualizarRegistro(List<String[]> dataList, int indiceRegistro, String rutaArchivo) {
         try {
             if (indiceRegistro >= 0 && indiceRegistro < dataList.size()) {
@@ -315,7 +379,6 @@ public class SeleniumScheduledTask {
             e.printStackTrace();
         }
     }
-
     private static void validationCreationFile(String rutaArchivo) throws IOException {
         // Creacion del objeto-archivo para guardar citas reagendadas - NO CREA UN ARCHIVO, solo un objeto que lo representa.
         File archivo = new File(rutaArchivo);
@@ -329,7 +392,6 @@ public class SeleniumScheduledTask {
             System.out.println("El archivo txt NO existe.");
         }*/
     }
-
     private static void InstanciateTheDriver() {
         System.setProperty("webdriver.chrome.driver", "src/main/resources/chromedriver");
         ChromeOptions options = new ChromeOptions();
@@ -339,19 +401,25 @@ public class SeleniumScheduledTask {
         driver.manage().window().maximize();
         String url = "https://ais.usvisa-info.com/es-co/niv/users/sign_in";
         driver.get(url);
+        sleepSeconds(2000);
     }
-
-    private static void sleep(long milliseconds) {
+    private static void sleepSeconds(long milliseconds) {
         try {
             Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
-
+    private static void sleepMinutes(long minutes) {
+        try {
+            Thread.sleep(minutes);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
     private static void scrollIntoView(WebElement element) {
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].scrollIntoView(true);", element);
-        sleep(2000); // Espera opcional para asegurarse de que la página se haya desplazado completamente
+        sleepSeconds(2000); // Espera opcional para asegurarse de que la página se haya desplazado completamente
     }
 }
